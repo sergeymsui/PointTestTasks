@@ -1,15 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using System.Data;
 using System.Data.SqlClient;
 
-using System.Diagnostics;
-
-using System.IO;
 using System.Threading;
 
 
@@ -17,25 +11,30 @@ namespace CConfigurator
 {
     class Program
     {
+        /// <summary>
+        /// Наименование БД
+        /// </summary>
+        public const string DATABASE_NAME = "configurator_database";
         public static void Main(string[] args)
         {
+            /// Запрос параметров
+
             Console.WriteLine("Host:");
             string host = Console.ReadLine();
 
             Console.WriteLine("User:");
             string user = Console.ReadLine();
 
+            /// Запрос пароля
             Console.WriteLine("Password:");
-            //string password = Console.ReadLine();
 
             ConsoleKeyInfo key; string pass = "";
             do
             {
                 key = Console.ReadKey(true);
-                if (key.Key != ConsoleKey.Backspace) // Backspace Should Not Work
+                if (key.Key != ConsoleKey.Backspace)
                 {
                     pass += key.KeyChar;
-                    //Console.Write("*");
                 }
                 else
                 {
@@ -44,8 +43,11 @@ namespace CConfigurator
             } while (key.Key != ConsoleKey.Enter);
             Console.WriteLine();
 
+            /// Ввод колисечтва заказов
+            Console.WriteLine("Orders count");
+            int ordersCount = Int32.Parse(Console.ReadLine());
 
-
+            /// Коннект к серверу
             SqlConnection serverConnection = DBSQLServerUtils.GetServerConnection(host, user, pass);
 
             try
@@ -54,6 +56,7 @@ namespace CConfigurator
                 serverConnection.Open();
                 Program.Notify("Connection successful!");
 
+                /// Создание БД
                 Program.CreateDatabase(serverConnection);
             }
             catch (Exception err)
@@ -63,6 +66,7 @@ namespace CConfigurator
 
             serverConnection.Close();
 
+            /// Коннект к базе
             SqlConnection dbConnection = DBSQLServerUtils.GetDBConnection(host, Program.DATABASE_NAME, user, pass);
 
             try
@@ -70,39 +74,42 @@ namespace CConfigurator
                 Program.Notify("Openning Connection ...");
                 dbConnection.Open();
                 Program.Notify("Connection successful!");
-
-
             }
             catch (Exception err)
             {
                 Program.Notify("Error: " + err.Message);
             }
 
+            /// Создание таблиц
             Program.CreateTables(dbConnection);
 
+            /// Заполнение таблицы клиентов
             Program.GenerateCustomers(dbConnection);
 
-            int orderCount = 40;
+            /// Заполнение таблицы заказов
+            Program.GenerateOrders(dbConnection, ordersCount);
 
-            Program.GenerateOrders(dbConnection, orderCount);
-
-            /*
-            Thread ordersThread = new Thread(() => Program.GenerateOrders(dbConnection, orderCount));
-            ordersThread.IsBackground = true;
-            ordersThread.Join();
-            */
+            dbConnection.Close();
         }
 
-        public const string DATABASE_NAME = "configurator_database";
-
+        /// <summary>
+        /// Лист ID клиентов
+        /// </summary>
         public static List<decimal> m_ids = new List<decimal>();
 
+        /// <summary>
+        /// Уведомления (Метод сделан как логгер)
+        /// </summary>
+        /// <param name="message"></param>
         public static void Notify(string message)
         {
             Console.WriteLine(message);
         }
 
-
+        /// <summary>
+        /// Метод для создания базы
+        /// </summary>
+        /// <param name="connection"></param>
         public static void CreateDatabase(SqlConnection connection)
         {
             Notify("CreateDatabase ...");
@@ -117,6 +124,10 @@ namespace CConfigurator
             Notify("Finish create database ...");
         }
 
+        /// <summary>
+        /// Метод создания таблиц
+        /// </summary>
+        /// <param name="connection"></param>
         public static void CreateTables(SqlConnection connection)
         {
             Notify("Customers and Orders table creating...");
@@ -151,19 +162,26 @@ namespace CConfigurator
             Notify("Finish");
         }
 
-
-
+        /// <summary>
+        /// Заполнение таблиц клиентов
+        /// </summary>
+        /// <param name="connection"></param>
         public static void GenerateCustomers(SqlConnection connection)
         {
-            Notify("GenerateCustomers start");
-
-            //this.Dispatcher.Invoke(() => { this.PrintMessage("GenerateCustomers start"); });
             if (connection.State != ConnectionState.Open)
                 connection.Open();
 
+            Notify("GenerateCustomers");
+
+            /// Progress bar для отображения текущего процесса
+            ProgressBar progress = new ProgressBar();
+
+            /// Число клиентов
+            var CustomersCount = 15;
+
             const string customerSql = "INSERT INTO dbo.Customers(ID,LastName,FirstName,MiddleName,Sex,BirthDate,RegistrationDate) VALUES(@p1,@p2,@p3,@p4,@p5,@p6,@p7)";
 
-            for (int i = 0; i < 15; i++)
+            for (int i = 0; i < CustomersCount; i++)
             {
                 SqlCommand cmd = new SqlCommand(customerSql, connection);
                 cmd.Parameters.Add("@p1", SqlDbType.Decimal).Value = i;
@@ -178,42 +196,62 @@ namespace CConfigurator
                 cmd.Parameters.Add("@p6", SqlDbType.DateTime).Value = (DateTime.Now.Date);
                 cmd.Parameters.Add("@p7", SqlDbType.DateTime).Value = (DateTime.Now.Date);
                 cmd.CommandType = CommandType.Text;
+
                 cmd.ExecuteNonQuery();
+
+                /// Смена статуса
+                progress.Report((double) i / CustomersCount);
             }
+
+            /// 100% завершение
+            progress.Report(1);
+            Thread.Sleep(1000);
             Notify("GenerateCustomers finish");
         }
 
+        /// <summary>
+        /// Метод заполнения таблицы заказов
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <param name="orderCount"></param>
         public static void GenerateOrders(SqlConnection connection, int orderCount = 20)
         {
-            Notify("GenerateOrders start");
-
             if (connection.State != ConnectionState.Open)
                 connection.Open();
 
+            Notify("GenerateOrders");
+
+            /// Progress bar для отображения текущего процесса
+            ProgressBar progress = new ProgressBar();
+
             const string orderSql = "INSERT INTO dbo.Orders(ID,CustomerID,OrderDate,Price) VALUES(@p1,@p2,@p3,@p4)";
 
+            /// Рандомизатор для хаотичного
+            /// - выбора клиента
             Random getrandom = new Random();
+            /// - задания цены
             Random getprice = new Random();
-
 
             for (int i = 0; i < orderCount; i++)
             {
                 SqlCommand cmd = new SqlCommand(orderSql, connection);
 
-                // Рандомный индекс
+                /// Рандомный индекс
                 int index = (int)getrandom.Next(0, m_ids.Count);
 
-                // Рандомный ID клиента
+                /// Рандомный ID клиента
                 decimal CustomerID = (decimal) m_ids[index];
+                
+                /// ID
+                cmd.Parameters.Add("@p1", SqlDbType.Decimal).Value = (decimal) i + 1;
 
-                double percent = 100 * i / orderCount;
-                Program.Notify(i.ToString() + " adding...");
-
-                cmd.Parameters.Add("@p1", SqlDbType.Decimal).Value = (decimal)i + 1;
-
+                /// CustomerID
                 cmd.Parameters.Add("@p2", SqlDbType.Decimal).Value = CustomerID;
+
+                /// Дата текущая
                 cmd.Parameters.Add("@p3", SqlDbType.DateTime).Value = (DateTime.Now.Date);
 
+                /// Цена
                 decimal price = (decimal)getprice.NextDouble() * 1000;
                 cmd.Parameters.Add("@p4", SqlDbType.Decimal).Value = price;
 
@@ -221,8 +259,13 @@ namespace CConfigurator
                 cmd.CommandType = CommandType.Text;
                 cmd.ExecuteNonQuery();
 
-                Thread.Sleep(10);
+                /// Обновляем процент завершения
+                progress.Report((double) i / orderCount);
             }
+
+            /// 100% завершение
+            progress.Report(1);
+            Thread.Sleep(1000);
             Notify("GenerateOrders end");
         }
     }
