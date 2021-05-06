@@ -9,10 +9,56 @@
     <Grid>
         <Label Content="Connection" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0" Width="122" FontWeight="Bold"/>
         <Label Content="Host" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,41,0,0"/>
-        <TextBox x:Name="hostBox" Height="23" Margin="75,44,10,0" TextWrapping="Wrap" Text="192.168.1.200" VerticalAlignment="Top"/>
+        <TextBox x:Name="hostBox" Height="23" Margin="75,44,10,0" TextWrapping="Wrap" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                    <Style.Resources>
+                        <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                            <VisualBrush.Visual>
+                                <Label Content="***.***.***.***" Foreground="LightGray" />
+                            </VisualBrush.Visual>
+                        </VisualBrush>
+                    </Style.Resources>
+                    <Style.Triggers>
+                        <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                            <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                        </Trigger>
+                        <Trigger Property="Text" Value="{x:Null}">
+                            <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter Property="Background" Value="White" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBox.Style>
+        </TextBox>
         <Label Content="User" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,72,0,0"/>
-        <TextBox x:Name="userBox" Height="23" Margin="75,75,10,0" TextWrapping="Wrap" Text="sa" VerticalAlignment="Top"/>
-        <Label Content="Passwodr" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,103,0,0"/>
+        <TextBox x:Name="userBox" Height="23" Margin="75,75,10,0" TextWrapping="Wrap" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                    <Style.Resources>
+                        <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                            <VisualBrush.Visual>
+                                <Label Content="User" Foreground="LightGray" />
+                            </VisualBrush.Visual>
+                        </VisualBrush>
+                    </Style.Resources>
+                    <Style.Triggers>
+                        <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                            <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                        </Trigger>
+                        <Trigger Property="Text" Value="{x:Null}">
+                            <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter Property="Background" Value="White" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <Label Content="Password" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,103,0,0"/>
         <Button Content="Connect" HorizontalAlignment="Left" Margin="221,263,0,0" VerticalAlignment="Top" Width="74" Click="Button_Click"/>
         <PasswordBox x:Name="passwordBox" Margin="75,111,10,0" VerticalAlignment="Top"/>
 
