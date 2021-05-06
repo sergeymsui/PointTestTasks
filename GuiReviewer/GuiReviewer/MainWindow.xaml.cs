@@ -125,6 +125,10 @@ namespace GuiReviewer
         {
             /// Номер строки
             int currentRowIndex = dataGrid.Items.IndexOf(dataGrid.CurrentItem);
+
+            /// Если currentRowIndex выходит за пределы таблицы данных
+            if (currentRowIndex > customerTable.Rows.Count-1) return;
+
             /// ID клиента
             decimal value = customerTable.Rows[currentRowIndex].Field<decimal>(0);
             /// Перезаполнение таблицы заказов
