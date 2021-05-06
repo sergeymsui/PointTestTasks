@@ -25,14 +25,21 @@ using System.Threading;
 namespace GuiConfigurator
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Основное окно приложения
     /// </summary>
     public partial class MainWindow : Window
     {
+        /// <summary>
+        /// Наименование БД
+        /// </summary>
         private const string DATABASE_NAME = "configurator_database";
 
+        /// <summary>
+        /// Лист ID клиентов
+        /// </summary>
         private List<decimal> m_ids;
 
+        /// Параметры подключения
         private string Host;
         private string User;
         private string Password;
@@ -50,16 +57,28 @@ namespace GuiConfigurator
             this.Password = dialog.Password;
         }
 
+        /// <summary>
+        /// Вывод сообщения в sideBar
+        /// </summary>
+        /// <param name="message"></param>
         private void PrintMessage(string message)
         {
             this.sideBarLabel.Text = message;
         }
 
+        /// <summary>
+        /// Уведомление
+        /// </summary>
+        /// <param name="message"></param>
         private void Notify(string message)
         {
             this.Dispatcher.Invoke(() => { this.PrintMessage(message); });
         }
 
+        /// <summary>
+        /// Метод для создания базы
+        /// </summary>
+        /// <param name="connection"></param>
         private void CreateDatabase(SqlConnection connection)
         {
             Notify("CreateDatabase ...");
@@ -74,6 +93,10 @@ namespace GuiConfigurator
             Notify("Finish create database ...");
         }
 
+        /// <summary>
+        /// Метод создания таблиц
+        /// </summary>
+        /// <param name="connection"></param>
         private void CreateTables(SqlConnection connection)
         {
             Notify("Customers and Orders table creating...");
@@ -108,12 +131,18 @@ namespace GuiConfigurator
             Notify("Finish");
         }
 
+        /// <summary>
+        /// Обработка нажатия клавиши ввода
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void inputButton_Click(object sender, RoutedEventArgs e)
         {
             string datasource = this.Host;
             string username = this.User;
             string password = this.Password;
 
+            /// Подключение к серверу
             SqlConnection serverConnection = DBSQLServerUtils.GetServerConnection(datasource, username, password);
 
             try
@@ -131,38 +160,41 @@ namespace GuiConfigurator
 
             serverConnection.Close();
 
+            /// Подключение к БД
             SqlConnection dbConnection = DBSQLServerUtils.GetDBConnection(datasource, DATABASE_NAME, username, password);
 
             try
             {
                 Notify("Openning Connection ...");
                 dbConnection.Open();
-                Notify("Connection successful!");
-
-                
+                Notify("Connection successful!");  
             }
             catch (Exception err)
             {
                 Notify("Error: " + err.Message);
             }
 
+            /// Создание таблиц
             CreateTables(dbConnection);
 
+            /// Заполнение таблицы клиентов
             GenerateCustomers(dbConnection);
 
+            /// Заполнение таблицы заказов в отдельном потоке
             int orderCount = Int32.Parse(orderCountBox.Text);
             Thread ordersThread = new Thread(() => GenerateOrders(dbConnection, orderCount));
             ordersThread.IsBackground = true;
             ordersThread.Start();
-
-            //Thread.Sleep(1000);
         }
 
+        /// <summary>
+        /// Заполнение таблиц клиентов
+        /// </summary>
+        /// <param name="connection"></param>
         public void GenerateCustomers(SqlConnection connection)
         {
             Notify("GenerateCustomers start");
 
-            //this.Dispatcher.Invoke(() => { this.PrintMessage("GenerateCustomers start"); });
             if (connection.State != ConnectionState.Open)
                 connection.Open();
 
@@ -188,6 +220,11 @@ namespace GuiConfigurator
             Notify("GenerateCustomers finish");
         }
 
+        /// <summary>
+        /// Метод заполнения таблицы заказов
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <param name="orderCount"></param>
         public void GenerateOrders(SqlConnection connection, int orderCount = 20)
         {
             Notify("GenerateOrders start");
@@ -205,10 +242,10 @@ namespace GuiConfigurator
             {
                 SqlCommand cmd = new SqlCommand(orderSql, connection);
 
-                // Рандомный индекс
+                /// Рандомный индекс
                 int index = (int)getrandom.Next(0, m_ids.Count);
 
-                // Рандомный ID клиента
+                /// Рандомный ID клиента
                 decimal CustomerID = (decimal)m_ids[index];
 
                 Notify(i.ToString() + " adding...");

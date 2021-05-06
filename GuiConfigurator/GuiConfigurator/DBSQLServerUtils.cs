@@ -8,10 +8,19 @@ using System.Data.SqlClient;
 namespace GuiConfigurator
 {
 
-
+    /// <summary>
+    /// Класс для коннекта к БД
+    /// </summary>
     class DBSQLServerUtils
     {
-
+        /// <summary>
+        /// Метод создания коннекта к БД
+        /// </summary>
+        /// <param name="datasource"></param>
+        /// <param name="database"></param>
+        /// <param name="username"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
         public static SqlConnection GetDBConnection(string datasource, string database, string username, string password)
         {
             string connString = @"Data Source=" + datasource + ";Initial Catalog="
@@ -22,6 +31,13 @@ namespace GuiConfigurator
             return conn;
         }
 
+        /// <summary>
+        /// Метод создания коннекта к серверу
+        /// </summary>
+        /// <param name="datasource"></param>
+        /// <param name="username"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
         public static SqlConnection GetServerConnection(string datasource, string username, string password)
         {
             string connString = @"Data Source=" + datasource + ";Persist Security Info=True;User ID=" + username + ";Password=" + password;// + ";Port=" + port;
